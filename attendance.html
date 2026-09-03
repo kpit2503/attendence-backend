@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Attendance App</title>
+
+    <!-- App Icons (PNG Integration) -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --paper:#EEF1ED;
+          --card:#FFFFFF;
+          --ink:#1F2A24;
+          --ink-soft:#5B685F;
+          --line:#DDE3DC;
+          --green:#2F9E44;
+          --green-deep:#1F7A34;
+          --amber:#E8A33D;
+          --red:#D6483C;
+          --shadow: 0 1px 2px rgba(31,42,36,0.06), 0 8px 24px rgba(31,42,36,0.06);
+        }
+        *{box-sizing:border-box;}
+        html,body{height:100%; margin:0; padding:0; background:var(--paper); overflow-x:hidden;}
+        body{
+          color:var(--ink);
+          font-family:'Inter',system-ui,sans-serif;
+          -webkit-font-smoothing:antialiased;
+          display:flex;
+          justify-content:center;
+        }
+        #app{
+          width:100%;
+          max-width:460px;
+          height:100vh;
+          background:var(--paper);
+          display:flex;
+          flex-direction:column;
+          position:relative;
+          overflow:hidden;
+        }
+        h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0;}
+        .screen{display:none; flex-direction:column; flex:1; padding:15px 15px 75px; overflow-y:auto;}
+        .screen.active{display:flex;}
+
+        /* Topbar */
+        .topbar{
+          display:flex; align-items:center; justify-content:space-between;
+          padding:12px 15px; background:var(--paper); z-index:10; border-bottom:1px solid var(--line);
+        }
+        .brand{display:flex; align-items:center; gap:8px;}
+        .brand-icon{width:22px; height:22px; border-radius:6px; object-fit:cover;}
+        .brand span{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
+        .back-btn{
+          background:none; border:none; font-size:14px; font-weight:600; color:var(--ink-soft);
+          cursor:pointer; display:flex; align-items:center; gap:4px; padding:0;
+        }
+        .user-chip{
+          font-size:12px; color:var(--ink-soft); background:var(--card);
+          padding:5px 10px; border-radius:100px; border:1px solid var(--line); cursor:pointer;
+        }
+
+        /* Screens */
+        #screen-login{justify-content:center; align-items:center; text-align:center; padding:32px;}
+        .login-mark{
+          width:72px; height:72px; border-radius:20px; overflow:hidden;
+          display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow: var(--shadow);
+        }
+        .login-mark img{width:100%; height:100%; object-fit:cover;}
+        .field{width:100%; text-align:left; margin-bottom:14px;}
+        .field label{font-size:12px; color:var(--ink-soft); font-weight:600; text-transform:uppercase;}
+        .field input, .field textarea{
+          width:100%; margin-top:6px; padding:12px; font-size:15px;
+          border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink);
+        }
+        .btn{
+          width:100%; padding:14px; border:none; border-radius:12px; font-size:14px;
+          font-weight:700; cursor:pointer; margin-top:6px;
+        }
+        .btn-primary{background:var(--ink); color:#fff;}
+        .btn-excel{background:var(--green); color:#fff; margin-bottom:12px;}
+        .btn-danger{background:none; color:var(--red); border:1px solid rgba(214,72,60,0.35);}
+        .btn-sm{padding:6px 10px; font-size:12px; border-radius:8px; width:auto; margin:0;}
+
+        /* Home */
+        .clock-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; margin:20px 0;}
+        .live-clock{font-family:'Space Grotesk',sans-serif; font-size:16px; color:var(--ink-soft);}
+        .dial{
+          width:200px; height:200px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+          position:relative; cursor:pointer; border:none; padding:0;
+          background: conic-gradient(var(--ring-color, var(--green)) var(--ring-pct, 0%), rgba(31,42,36,0.08) 0%);
+        }
+        .dial-inner{
+          width:170px; height:170px; border-radius:50%; background:var(--card);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: var(--shadow);
+        }
+        .status-pill{font-size:12px; font-weight:600; padding:6px 14px; border-radius:100px; background:var(--card); border:1px solid var(--line);}
+
+        /* Cards & Lists */
+        .today-card, .summary-card, .reminder-card{
+          background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px;
+        }
+        .month-switch{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+        .month-switch button{background:var(--card); border:1px solid var(--line); border-radius:8px; width:36px; height:36px; cursor:pointer;}
+        .summary-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+        .rec-item{
+          background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:12px; margin-bottom:8px; display:flex; flex-direction:column; gap:8px;
+        }
+        .rec-header{display:flex; justify-content:space-between; align-items:center;}
+        .rec-actions{display:flex; gap:6px; justify-content:flex-end; border-top:1px dashed var(--line); padding-top:6px;}
+
+        /* Bottom Navbar */
+        .navbar{
+          position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+          width:100%; max-width:460px; height:60px; background:var(--card);
+          border-top:1px solid var(--line); display:flex; z-index:1000;
+        }
+        .navbtn{
+          flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:2px; background:none; border:none; color:var(--ink-soft); font-size:10px; font-weight:600; cursor:pointer;
+        }
+        .navbtn.active{color:var(--green-deep);}
+        .navbtn svg{width:18px; height:18px;}
+
+        .settings-group{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:4px 12px; margin-bottom:14px;}
+        .settings-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line);}
+        .settings-row:last-child{border-bottom:none;}
+        .settings-row input{width:95px; text-align:right; padding:6px; border:1px solid var(--line); border-radius:6px;}
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- LOGIN -->
+    <div class="screen active" id="screen-login">
+        <div class="login-mark">
+            <img src="icon.png" alt="App Logo" onerror="this.style.display='none'">
+        </div>
+        <h1>Attendance</h1>
+        <p style="color:var(--ink-soft); font-size:13px; margin:4px 0 20px;">Track presence & automatic salary payout</p>
+        <div class="field">
+            <label>Your Name</label>
+            <input id="login-username" type="text" placeholder="Enter full name">
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()">Continue</button>
+    </div>
+
+    <!-- HOME -->
+    <div class="screen" id="screen-home">
+        <div class="topbar">
+            <div class="brand">
+                <img src="icon.png" class="brand-icon" alt="Logo" onerror="this.style.display='none'">
+                <span>Attendance</span>
+            </div>
+            <div class="user-chip" onclick="goScreen('settings')" id="home-user-chip">—</div>
+        </div>
+        <div style="font-size:13px; color:var(--ink-soft); margin-top:8px;" id="home-date">—</div>
+        <div class="clock-wrap">
+            <div class="live-clock" id="live-clock">--:--:--</div>
+            <button class="dial" id="punch-dial" onclick="handlePunch()">
+                <div class="dial-inner">
+                    <div id="dial-cta" style="font-weight:700; font-size:18px; text-align:center;">Mark<br>Attendance</div>
+                    <div id="dial-sub" style="font-size:11px; color:var(--ink-soft); margin-top:4px;">Tap circle</div>
+                </div>
+            </button>
+            <div class="status-pill" id="status-pill"></div>
+        </div>
+        <div class="today-card" id="today-card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Checked in</span><strong id="tc-time">—</strong></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Deduction</span><strong id="tc-ded">—</strong></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>Est. Pay Today</span><strong id="tc-pay">—</strong></div>
+        </div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="screen" id="screen-report">
+        <div class="topbar">
+            <button class="back-btn" onclick="goScreen('home')">‹ Back</button>
+            <div class="brand"><span>Report</span></div>
+            <div></div>
+        </div>
+        <div class="month-switch" style="margin-top:10px;">
+            <button onclick="shiftMonth(-1)">‹</button>
+            <div style="font-weight:700;" id="report-month-label">—</div>
+            <button onclick="shiftMonth(1)">›</button>
+        </div>
+        <button class="btn btn-excel" onclick="exportToExcel()">📊 Export Report to Excel</button>
+        <div class="summary-grid">
+            <div class="summary-card"><div style="font-size:18px; font-weight:700;" id="sum-present">0</div><div style="font-size:11px; color:var(--ink-soft);">Present Days</div></div>
+            <div class="summary-card"><div style="font-size:18px; font-weight:700;" id="sum-absent">0</div><div style="font-size:11px; color:var(--ink-soft);">Absent Days</div></div>
+        </div>
+        <div class="summary-card" style="margin-bottom:14px;">
+            <div style="font-size:20px; font-weight:700; color:var(--green-deep);" id="sum-salary">₹0</div>
+            <div style="font-size:11px; color:var(--ink-soft);">Total Net Salary Earned</div>
+        </div>
+        <div id="rec-list"></div>
+    </div>
+
+    <!-- REMINDERS -->
+    <div class="screen" id="screen-reminders">
+        <div class="topbar">
+            <button class="back-btn" onclick="goScreen('home')">‹ Back</button>
+            <div class="brand"><span>Reminders</span></div>
+            <div></div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+            <label>Title</label>
+            <input id="rem-title" type="text" placeholder="Task or Note Title">
+        </div>
+        <div class="field">
+            <label>Details</label>
+            <textarea id="rem-note" rows="2" placeholder="Notes..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="addReminder()" style="margin-bottom:15px;">Add Reminder</button>
+        <div id="reminder-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+        <div class="topbar">
+            <button class="back-btn" onclick="goScreen('home')">‹ Back</button>
+            <div class="brand"><span>Settings</span></div>
+            <div></div>
+        </div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--ink-soft); margin:10px 0 6px;">Salary Rules</div>
+        <div class="settings-group">
+            <div class="settings-row">
+                <span>Monthly Salary (₹)</span>
+                <input id="s-salary" type="number">
+            </div>
+            <div class="settings-row">
+                <span>Working Days/Month</span>
+                <input id="s-workingdays" type="number">
+            </div>
+        </div>
+
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--ink-soft); margin:10px 0 6px;">Deduction Rules (Arrival Time)</div>
+        <div class="settings-group">
+            <div class="settings-row">
+                <div><div style="font-size:13px; font-weight:600;">On time until</div><div style="font-size:11px; color:var(--ink-soft);">0% deduction</div></div>
+                <input id="s-t1" type="time">
+            </div>
+            <div class="settings-row">
+                <div><div style="font-size:13px; font-weight:600;">Tier 1 until</div><div style="font-size:11px; color:var(--ink-soft);">10% deduction</div></div>
+                <input id="s-t2" type="time">
+            </div>
+            <div class="settings-row">
+                <div><div style="font-size:13px; font-weight:600;">Tier 2 until</div><div style="font-size:11px; color:var(--ink-soft);">25% deduction</div></div>
+                <input id="s-t3" type="time">
+            </div>
+            <div class="settings-row">
+                <div><div style="font-size:13px; font-weight:600;">Tier 3 until</div><div style="font-size:11px; color:var(--ink-soft);">50% deduction</div></div>
+                <input id="s-t4" type="time">
+            </div>
+            <div class="settings-row">
+                <div><div style="font-size:13px; font-weight:600;">After tier 3</div><div style="font-size:11px; color:var(--ink-soft);">75% deduction</div></div>
+                <span style="font-size:12px; color:var(--ink-soft);">Fixed</span>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        <button class="btn btn-danger" onclick="handleLogout()" style="margin-top:10px;">Log Out</button>
+    </div>
+
+    <!-- BOTTOM NAVBAR -->
+    <div class="navbar" id="navbar" style="display:none;">
+        <button class="navbtn" data-tab="home" onclick="goScreen('home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9h12v-9"/></svg>
+            Home
+        </button>
+        <button class="navbtn" data-tab="report" onclick="goScreen('report')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+            Report
+        </button>
+        <button class="navbtn" data-tab="reminders" onclick="goScreen('reminders')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Notes
+        </button>
+        <button class="navbtn" data-tab="settings" onclick="goScreen('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // DYNAMIC API BASE URL FIX (Detects Desktop Browser vs Android Emulator vs Mobile Phone)
+    const isAndroidEmulator = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isAndroidEmulator ? (window.location.protocol === 'file:' ? 'http://10.0.2.2:5000' : '') : '';
+
+    let userData = {
+      id: null,
+      username: '',
+      monthlySalary: 0,
+      workingDays: 26,
+      tiers: { onTime: "10:00", t1: "11:00", t2: "13:00", t3: "16:00" },
+      records: {},
+      reminders: []
+    };
+    let reportMonthOffset = 0;
+    let clockTimer = null;
+
+    function pad(n){ return n.toString().padStart(2,'0'); }
+    function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+    function timeStr(d){ return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+    function timeToMinutes(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+
+    function parseDateKey(keyStr) {
+      const parts = keyStr.split('-');
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    async function handleLogin(){
+      const name = document.getElementById('login-username').value.trim();
+      if(!name){ alert('Please enter your name'); return; }
+
+      try {
+        const res = await fetch(API_BASE + '/api/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username: name })
+        });
+        const data = await res.json();
+        if(data.status === 'ok') {
+          userData.id = data.user_id;
+          userData.username = data.username;
+          userData.monthlySalary = data.monthly_salary;
+          userData.workingDays = data.working_days;
+          if(data.tiers) userData.tiers = data.tiers;
+
+          await syncData();
+          enterApp();
+        }
+      } catch(e) {
+        alert('Server error connecting to database');
+      }
+    }
+
+    async function syncData(){
+      const recRes = await fetch(API_BASE + '/api/records/' + userData.id);
+      const recs = await recRes.json();
+      userData.records = {};
+      recs.forEach(r => { userData.records[r.date] = r; });
+
+      const remRes = await fetch(API_BASE + '/api/reminders/' + userData.id);
+      userData.reminders = await remRes.json();
+    }
+
+    function enterApp(){
+      document.getElementById('navbar').style.display='flex';
+      document.getElementById('home-user-chip').textContent = userData.username;
+      populateSettingsForm();
+      goScreen('home');
+      refreshHome();
+      if(clockTimer) clearInterval(clockTimer);
+      clockTimer = setInterval(refreshHome, 1000);
+    }
+
+    function handleLogout(){
+      if(clockTimer) clearInterval(clockTimer);
+      document.getElementById('navbar').style.display='none';
+      goScreen('login');
+    }
+
+    function goScreen(name){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('screen-'+name).classList.add('active');
+      document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+      if(name==='report'){ reportMonthOffset=0; renderReport(); }
+      if(name==='reminders'){ renderReminders(); }
+      if(name==='settings'){ populateSettingsForm(); }
+    }
+
+    function computeDeduction(now){
+      const t = userData.tiers;
+      const mins = now.getHours() * 60 + now.getMinutes();
+
+      if(mins <= timeToMinutes(t.onTime)) return {pct: 0, label: 'On time'};
+      if(mins <= timeToMinutes(t.t1)) return {pct: 10, label: 'Late'};
+      if(mins <= timeToMinutes(t.t2)) return {pct: 25, label: 'Late'};
+      if(mins <= timeToMinutes(t.t3)) return {pct: 50, label: 'Very late'};
+      return {pct: 75, label: 'Very late'};
+    }
+
+    function refreshHome(){
+      const now = new Date();
+      document.getElementById('live-clock').textContent = timeStr(now);
+      document.getElementById('home-date').textContent = now.toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+      const key = dateKey(now);
+      const rec = userData.records[key];
+      const dial = document.getElementById('punch-dial');
+      const cta = document.getElementById('dial-cta');
+      const sub = document.getElementById('dial-sub');
+      const pill = document.getElementById('status-pill');
+      const todayCard = document.getElementById('today-card');
+
+      if(rec){
+        dial.style.setProperty('--ring-pct','100%');
+        dial.style.setProperty('--ring-color', rec.pct===0 ? 'var(--green)' : rec.pct>=50 ? 'var(--red)' : 'var(--amber)');
+        cta.innerHTML = 'Marked';
+        sub.textContent = 'at ' + timeStr(new Date(rec.timestamp));
+        pill.textContent = rec.label + ' · ' + rec.pct + '% deduction';
+        todayCard.style.display='block';
+        document.getElementById('tc-time').textContent = timeStr(new Date(rec.timestamp));
+        document.getElementById('tc-ded').textContent = rec.pct+'%';
+        const perDay = userData.monthlySalary / (userData.workingDays||26);
+        document.getElementById('tc-pay').textContent = '₹'+Math.round(perDay*(1-rec.pct/100));
+      } else {
+        const preview = computeDeduction(now);
+        dial.style.setProperty('--ring-pct', '0%');
+        dial.style.setProperty('--ring-color', preview.pct===0 ? 'var(--green)' : preview.pct>=50 ? 'var(--red)' : 'var(--amber)');
+        cta.textContent = 'Mark Attendance';
+        sub.textContent = 'Tap the circle';
+        pill.textContent = preview.pct === 0 ? 'On time right now' : ('Right now: ' + preview.pct + '% deduction');
+        todayCard.style.display='none';
+      }
+    }
+
+    async function handlePunch(){
+      const now = new Date();
+      const key = dateKey(now);
+      if(userData.records[key]) return;
+
+      const d = computeDeduction(now);
+      const payload = {
+        user_id: userData.id,
+        date_key: key,
+        pct: d.pct,
+        label: d.label,
+        timestamp: now.toISOString()
+      };
+
+      await fetch(API_BASE + '/api/punch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      await syncData();
+      refreshHome();
+    }
+
+    async function editTime(key){
+      const newTimeStr = prompt("Enter arrival time (HH:MM 24hr format, e.g. 09:30):");
+      if(!newTimeStr) return;
+
+      const [h, m] = newTimeStr.split(':').map(Number);
+      if(isNaN(h) || isNaN(m)) return alert('Invalid Time');
+
+      const d = parseDateKey(key);
+      d.setHours(h, m, 0, 0);
+
+      const ded = computeDeduction(d);
+      await fetch(API_BASE + '/api/records/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: userData.id,
+          date_key: key,
+          pct: ded.pct,
+          label: ded.label,
+          timestamp: d.toISOString()
+        })
+      });
+
+      await syncData();
+      renderReport();
+      refreshHome();
+    }
+
+    async function deleteRecord(key){
+      if(!confirm("Are you sure you want to delete this marked attendance?")) return;
+      await fetch(API_BASE + '/api/records/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user_id: userData.id, date_key: key })
+      });
+
+      await syncData();
+      renderReport();
+      refreshHome();
+    }
+
+    async function addReminder(){
+      const title = document.getElementById('rem-title').value.trim();
+      const note = document.getElementById('rem-note').value.trim();
+      if(!title) return alert('Title is required');
+
+      await fetch(API_BASE + '/api/reminders/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: userData.id,
+          title: title,
+          note: note,
+          date: new Date().toLocaleDateString('en-IN')
+        })
+      });
+
+      document.getElementById('rem-title').value = '';
+      document.getElementById('rem-note').value = '';
+      await syncData();
+      renderReminders();
+    }
+
+    async function deleteReminder(id){
+      await fetch(API_BASE + '/api/reminders/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id: id })
+      });
+      await syncData();
+      renderReminders();
+    }
+
+    function renderReminders(){
+      const list = document.getElementById('reminder-list');
+      list.innerHTML = '';
+      userData.reminders.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'reminder-card';
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>${r.title}</strong>
+            <button class="btn btn-danger btn-sm" onclick="deleteReminder(${r.id})">Delete</button>
+          </div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:4px;">${r.note||''}</div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function shiftMonth(delta){ reportMonthOffset += delta; renderReport(); }
+
+    function renderReport(){
+      const base = new Date();
+      const viewDate = new Date(base.getFullYear(), base.getMonth()+reportMonthOffset, 1);
+      const year = viewDate.getFullYear(), month = viewDate.getMonth();
+      document.getElementById('report-month-label').textContent = viewDate.toLocaleDateString('en-IN',{month:'long', year:'numeric'});
+
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      const perDay = userData.monthlySalary / (userData.workingDays||26);
+      let present=0, absent=0, totalPay=0;
+      const list = document.getElementById('rec-list');
+      list.innerHTML = '';
+
+      for(let day=1; day<=daysInMonth; day++){
+        const d = new Date(year, month, day);
+        const key = dateKey(d);
+        const rec = userData.records[key];
+
+        if(rec){
+          present++;
+          const dayEarned = perDay*(1-rec.pct/100);
+          totalPay += dayEarned;
+
+          const div = document.createElement('div');
+          div.className = 'rec-item';
+          div.innerHTML = `
+            <div class="rec-header">
+              <div>
+                <strong>${d.toLocaleDateString('en-IN',{day:'numeric', month:'short', weekday:'short'})}</strong>
+                <div style="font-size:12px; color:var(--ink-soft);">${timeStr(new Date(rec.timestamp))} (${rec.label})</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="color:var(--red); font-weight:700;">-${rec.pct}%</span>
+                <div style="font-size:12px; font-weight:600;">₹${Math.round(dayEarned)}</div>
+              </div>
+            </div>
+            <div class="rec-actions">
+              <button class="btn btn-sm" style="background:#e0e0e0;" onclick="editTime('${key}')">Edit Time</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteRecord('${key}')">Delete</button>
+            </div>
+          `;
+          list.appendChild(div);
+        } else {
+          absent++;
+        }
+      }
+
+      document.getElementById('sum-present').textContent = present;
+      document.getElementById('sum-absent').textContent = absent;
+      document.getElementById('sum-salary').textContent = '₹' + Math.round(totalPay).toLocaleString('en-IN');
+    }
+
+    function exportToExcel(){
+      const perDay = userData.monthlySalary / (userData.workingDays||26);
+      let csvContent = "data:text/csv;charset=utf-8,Date,CheckIn Time,Status,Deduction Pct,Earned Amount\n";
+
+      Object.keys(userData.records).forEach(key => {
+        const rec = userData.records[key];
+        const dayEarned = Math.round(perDay*(1-rec.pct/100));
+        csvContent += `${key},${timeStr(new Date(rec.timestamp))},${rec.label},${rec.pct}%,₹${dayEarned}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Attendance_Report_${userData.username}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function populateSettingsForm(){
+      document.getElementById('s-salary').value = userData.monthlySalary || '';
+      document.getElementById('s-workingdays').value = userData.workingDays || 26;
+      document.getElementById('s-t1').value = userData.tiers.onTime || '10:00';
+      document.getElementById('s-t2').value = userData.tiers.t1 || '11:00';
+      document.getElementById('s-t3').value = userData.tiers.t2 || '13:00';
+      document.getElementById('s-t4').value = userData.tiers.t3 || '16:00';
+    }
+
+    async function saveSettings(){
+      userData.monthlySalary = parseFloat(document.getElementById('s-salary').value)||0;
+      userData.workingDays = parseInt(document.getElementById('s-workingdays').value)||26;
+      userData.tiers.onTime = document.getElementById('s-t1').value || '10:00';
+      userData.tiers.t1 = document.getElementById('s-t2').value || '11:00';
+      userData.tiers.t2 = document.getElementById('s-t3').value || '13:00';
+      userData.tiers.t3 = document.getElementById('s-t4').value || '16:00';
+
+      await fetch(API_BASE + '/api/user/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: userData.id,
+          monthly_salary: userData.monthlySalary,
+          working_days: userData.workingDays,
+          tiers: userData.tiers
+        })
+      });
+
+      alert('Settings Saved');
+      refreshHome();
+    }
+</script>
+</body>
+</html>
