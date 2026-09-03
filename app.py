@@ -11,10 +11,22 @@ from flask import Flask, render_template, send_from_directory
 app = Flask(__name__)
 CORS(app)
 
-# Force the database file to stay in the root project folder
 base_dir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(base_dir, 'attendance.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+database_url = os.getenv('DATABASE_URL')
+
+if database_url:
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace(
+            'postgres://',
+            'postgresql://',
+            1
+        )
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
