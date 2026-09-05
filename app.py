@@ -31,7 +31,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- STATIC & FRONTEND ROUTES ---
+# --- routes ---
+@app.route('/icon.png')
+def serve_icon():
+    return send_from_directory('.', 'icon.png')
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
