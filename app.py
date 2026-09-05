@@ -33,16 +33,6 @@ db = SQLAlchemy(app)
 
 # --- STATIC & FRONTEND ROUTES ---
 
-# 1. Serve index.html at root
-@app.route('/')
-def index():
-    return send_from_directory('.', 'attendence.html')
-
-# 2. Serve icon.png directly from root
-@app.route('/icon.png')
-def serve_icon():
-    return send_from_directory('.', 'icon.png')
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
