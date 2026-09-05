@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="/icon.png?v=4">
+    <link rel="apple-touch-icon" href="/icon.png?v=4">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Attendance App</title>
@@ -150,11 +152,12 @@
         <button class="btn btn-primary" onclick="handleLogin()">Continue</button>
     </div>
 
-    <!-- HOME -->
+ 
+   <!-- HOME -->
     <div class="screen" id="screen-home">
         <div class="topbar">
             <div class="brand">
-                <img src="icon.png" class="brand-icon" alt="Logo" onerror="this.style.display='none'">
+                <img src="/icon.png?v=4" class="brand-icon" alt="Logo" style="width:22px; height:22px; object-fit:contain;" onerror="this.style.display='none'">
                 <span>Attendance</span>
             </div>
             <div class="user-chip" onclick="goScreen('settings')" id="home-user-chip">—</div>
