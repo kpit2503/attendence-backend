@@ -36,7 +36,7 @@ db = SQLAlchemy(app)
 # 1. Serve index.html at root
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('.', 'attendence.html')
 
 # 2. Serve icon.png directly from root
 @app.route('/icon.png')
