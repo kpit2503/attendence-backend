@@ -1,5 +1,6 @@
 fastapi>=0.115,<1
 fastapi-users[sqlalchemy]>=14,<15
+gunicorn>=23,<24
 uvicorn[standard]>=0.30,<1
 SQLAlchemy>=2,<3
 asyncpg>=0.29,<1
