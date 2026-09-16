@@ -5,6 +5,7 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,13 +21,24 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_TIERS = '{"onTime":"10:00","t1":"11:00","t2":"13:00","t3":"16:00"}'
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./attendance_fastapi.db")
+engine_options = {}
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 elif DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+if DATABASE_URL.startswith("postgresql+asyncpg://"):
+    parsed_database_url = urlsplit(DATABASE_URL)
+    database_query = dict(parse_qsl(parsed_database_url.query, keep_blank_values=True))
+    ssl_mode = database_query.pop("sslmode", "")
+    DATABASE_URL = urlunsplit(
+        parsed_database_url._replace(query=urlencode(database_query))
+    )
+    if ssl_mode.lower() == "require":
+        engine_options["connect_args"] = {"ssl": "require"}
 SECRET = os.getenv("SECRET", "change-this-in-render-before-deploying")
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -36,7 +48,7 @@ EMAIL_FROM = os.getenv("EMAIL_FROM", SMTP_USERNAME)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8000").rstrip("/")
 logger = logging.getLogger(__name__)
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, **engine_options)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -202,7 +214,12 @@ app.add_middleware(
 app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
 app.include_router(fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"])
 app.include_router(fastapi_users.get_reset_password_router(), prefix="/auth", tags=["auth"])
-app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount("/static", StaticFiles(directory=APP_DIR), name="static")
+
+
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
 
 
 def profile(user: User) -> dict:
@@ -301,7 +318,7 @@ async def delete_reminder(data: ReminderDelete, session: AsyncSession = Depends(
 
 @app.get("/")
 async def serve_html():
-    return FileResponse("attendance.html")
+    return FileResponse(os.path.join(APP_DIR, "attendance.html"))
 
 
 if __name__ == "__main__":
