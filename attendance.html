@@ -496,9 +496,7 @@
       if(name==='settings'){ populateSettingsForm(); }
     }
 
-    if(new URLSearchParams(window.location.search).get('reset_token')) {
-      goScreen('reset-password');
-    }
+    
 
     function computeDeduction(now){
       const t = userData.tiers;
@@ -763,6 +761,33 @@
       alert('Settings Saved');
       refreshHome();
     }
+
+async function initializeApp(){
+  const resetToken = new URLSearchParams(window.location.search).get('reset_token');
+
+  if(resetToken){
+    goScreen('reset-password');
+    return;
+  }
+
+  if(accessToken){
+    try {
+      await loadCurrentUser();
+      await syncData();
+      enterApp();
+    } catch(e) {
+      console.log('Session restore failed:', e);
+      accessToken = null;
+      localStorage.removeItem('attendance_access_token');
+      goScreen('login');
+    }
+  } else {
+    goScreen('login');
+  }
+}
+
+initializeApp();
+
 </script>
 </body>
 </html>
